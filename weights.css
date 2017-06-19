@@ -1,0 +1,23 @@
+body {
+  font-family: Verdana,Arial,Helvetica,sans;
+}
+button {
+  padding: 5px;
+  border-radius: 5px;
+  box-shadow:none;
+  border-width: 0;
+}
+button[type=submit],
+button.addSetBtn {
+  padding: 5px 10px;
+  margin: 0 5px;
+  background-color: #0099FF;
+  border-radius: 5px;
+  box-shadow:none;
+  border-width: 0;
+  color: white;
+}
+.work {
+    color: gray;
+    font-style: italic;
+}
