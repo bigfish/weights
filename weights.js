@@ -121,6 +121,13 @@ function formatExercise(exercise, max, percent, reps, setId, len) {
        + '</div>';
 }
 
+function deload(overloadWeek) {
+    return {
+        percent: overloadWeek.percent * 0.85,
+        reps: Math.round(overloadWeek.reps * 0.60)
+    };
+}
+
 var program = {
 
     hypertrophy: [
@@ -136,10 +143,10 @@ var program = {
             percent: 70,
             reps: 6
         },
-        {
-            percent: 60,
-            reps: 3
-        },
+        deload({
+            percent: 70,
+            reps: 6
+        }),
     ],
     strength: [
         {
@@ -154,10 +161,10 @@ var program = {
             percent: 85,
             reps: 4
         },
-        {
-            percent: 60,
-            reps: 3
-        },
+        deload({
+            percent: 85,
+            reps: 4
+        })
     ],
     peaking: [
         {
@@ -176,34 +183,30 @@ var program = {
             percent: 105,
             reps: 1
         },
-        {
-            percent: 60,
-            reps: 3
-        },
+        deload({
+            percent: 105,
+            reps: 1
+        })
     ]
 
 };
 
 var workouts = [
-   ['squat', 'benchpress'],
-   ['barbellrow', 'ohpress'],
-   ['deadlift', 'chinup'],
+   ['squat', 'benchpress', 'chinup'],
+   ['barbellrow', 'ohpress', 'deadlift']
 ];
 
 function formatPhase(phase, max, len) {
 
-    echo('----------------------');
-    echo('      ' + phase.toUpperCase());
-    echo('----------------------');
-    echo('');
+    echo('      <h2>' + phase.toUpperCase() + ' PHASE </h2>');
 
     program[phase].forEach(function (levels, week) {
 
-        echo('----- WEEK ' + (week + 1) + ' - ' + levels.percent + '% ---');
-        echo('');
+        var id = phase + '__week-' + week;
+        echo('<h3 id="' + id + '"><a href="#' + id +'"> WEEK ' + (week + 1) + ' - ' + levels.percent + '% </a></h3>');
         workouts.forEach(function (workout, day) {
-            echo(' -- DAY ' + (day + 1) + ' --');
-            echo('');
+            var dayId = phase + '--wk-' + week + '--day-' + day;
+            echo('<h4 id="' + dayId + '"><a href="#' + dayId + '"> WORKOUT ' + (day + 1) + '</a></h4>');
             workout.forEach(function (exercise) {
                 echo(formatExercise(exercise, max[exercise], levels.percent, levels.reps,
                                   phase + '--wk-' + week + '--day-' + day + '--' + exercise, len[exercise]));
