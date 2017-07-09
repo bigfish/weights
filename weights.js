@@ -14,6 +14,7 @@ function el(id) {
  */
 
 function perc(max, p) {
+
     var weight =  max * p /100;
     var weightWithoutBar = weight - 45;
     var halfWeightWithoutBar = Math.round(weightWithoutBar / 2);
@@ -179,13 +180,9 @@ var program = {
             percent: 100,
             reps: 2
         },
-        {
-            percent: 105,
-            reps: 1
-        },
         deload({
-            percent: 105,
-            reps: 1
+            percent: 100,
+            reps: 2
         })
     ]
 
@@ -196,7 +193,7 @@ var workouts = [
    ['barbellrow', 'ohpress', 'deadlift']
 ];
 
-function formatPhase(phase, max, len) {
+function formatPhase(phase, max, len, incr) {
 
     echo('      <h2>' + phase.toUpperCase() + ' PHASE </h2>');
 
@@ -208,7 +205,11 @@ function formatPhase(phase, max, len) {
             var dayId = phase + '--wk-' + week + '--day-' + day;
             echo('<h4 id="' + dayId + '"><a href="#' + dayId + '"> WORKOUT ' + (day + 1) + '</a></h4>');
             workout.forEach(function (exercise) {
-                echo(formatExercise(exercise, max[exercise], levels.percent, levels.reps,
+                console.log(typeof incr[exercise]);
+
+                var targetMax = max[exercise] * (100 + incr[exercise]) / 100;
+                console.log(targetMax);
+                echo(formatExercise(exercise, targetMax , levels.percent, levels.reps,
                                   phase + '--wk-' + week + '--day-' + day + '--' + exercise, len[exercise]));
             });
             echo('');
@@ -217,6 +218,9 @@ function formatPhase(phase, max, len) {
 
     });
 
+}
+function num(n) {
+    return parseInt(n, 10);
 }
 
 function calc() {
@@ -234,6 +238,13 @@ function calc() {
     var barbellrow_len = el('barbellrow-len');
     var deadlift_len = el('deadlift-len');
     var ohpress_len = el('ohpress-len');
+    //increase
+    var chinup_incr = el('chinup-incr');
+    var squat_incr = el('squat-incr');
+    var benchpress_incr = el('benchpress-incr');
+    var barbellrow_incr = el('barbellrow-incr');
+    var deadlift_incr = el('deadlift-incr');
+    var ohpress_incr = el('ohpress-incr');
     var max = {
         squat: squat.value,
         chinup: chinup.value,
@@ -241,6 +252,14 @@ function calc() {
         barbellrow: barbellrow.value,
         ohpress: ohpress.value,
         deadlift: deadlift.value,
+    };
+    var incr = {
+        squat: num(squat_incr.value),
+        chinup: num(chinup_incr.value),
+        benchpress: num(benchpress_incr.value),
+        barbellrow: num(barbellrow_incr.value),
+        ohpress: num(ohpress_incr.value),
+        deadlift: num(deadlift_incr.value),
     };
     var len = {
         squat: squat_len.value,
@@ -251,9 +270,9 @@ function calc() {
         deadlift: deadlift_len.value,
     };
 
-    formatPhase('hypertrophy', max, len);
-    formatPhase('strength', max, len);
-    formatPhase('peaking', max, len);
+    formatPhase('hypertrophy', max, len, incr);
+    formatPhase('strength', max, len, incr);
+    formatPhase('peaking', max, len, incr);
 
     return false;
 }
