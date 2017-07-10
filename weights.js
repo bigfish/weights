@@ -76,47 +76,88 @@ function echo(html) {
 }
 
 function getWork(setsDone, max, percent, len) {
-    var workJ = Math.floor(setsDone * work(kg(getPlateWeight(perc(max, percent))), len));
+    var repsDone = setsDone.reduce(function (prev, set) {
+        return prev + set;
+    }, 0);
+    var workPerRep = work(kg(getPlateWeight(perc(max, percent))), len);
+    var workJ = Math.floor(repsDone * workPerRep);
     return workJ + 'kJ ' + Math.floor(workJ / 4.186)  + 'C';
 }
 
-function addSet(id, max, perc, len) {
-    var setsDone = localStorage.getItem(id);
-    if (!setsDone) {
-        setsDone = 0;
+function addSet(id, max, perc, len, targetReps, repsId) {
+    var setsDoneJson = localStorage.getItem(id);
+    if (!setsDoneJson || setsDoneJson === 'undefined') {
+        setsDoneJson = '[]';
     }
-    setsDone++;
-    localStorage.setItem(id, setsDone);
-    el(id).innerText = '[' + setsDone + ']';
+
+    var setsDone = JSON.parse(setsDoneJson);
+    if (typeof setsDone === 'string') {
+        setsDone = parseInt(setsDone, 10);
+    }
+    if (typeof setsDone === 'number') {
+        setsDone = (new Array(setsDone)).map(function() { return targetReps; });
+    }
+    var reps = el(repsId).value;
+    setsDone.push(reps);
+    var setsDoneStr = JSON.stringify(setsDone);
+    localStorage.setItem(id, setsDoneStr);
+    el(id).innerText = 'Sets: ' + setsDone.toString();
     el(id + '__work').innerText = getWork(setsDone, max, perc, len);
 }
 
-function removeSet(id, max, perc, len) {
-    var setsDone = localStorage.getItem(id);
-    if (!setsDone) {
-        setsDone = 0;
-    } else {
-        if (setsDone > 0) {
-            setsDone--;
-        }
+function removeSet(id, max, perc, len, targetReps) {
+    var setsDoneJson = localStorage.getItem(id);
+    if (!setsDoneJson) {
+        setsDoneJson = '[]';
     }
-    localStorage.setItem(id, setsDone);
-    el(id).innerText = '[' + setsDone + ']';
+    var setsDone = JSON.parse(setsDoneJson);
+    if (typeof setsDone === 'string') {
+        setsDone = parseInt(setsDone, 10);
+    }
+    if (typeof setsDone === 'number') {
+        setsDone = (new Array(setsDone)).map(function() { return targetReps; });
+    }
+
+    if (setsDone.length > 0) {
+        setsDone.pop();
+    }
+
+    var setsDoneStr = JSON.stringify(setsDone);
+    localStorage.setItem(id, setsDoneStr);
+    el(id).innerText = 'Sets: ' + setsDone.toString();
     el(id + '__work').innerText = getWork(setsDone, max, perc, len);
 }
 
-function formatExercise(exercise, max, percent, reps, setId, len) {
-    var setsDone = localStorage.getItem(setId);
-    if (!setsDone) {
-        setsDone = 0;
+function setReps(srcId, targetId) {
+    el(targetId).value = el(srcId).value;
+}
+
+function formatExercise(exercise, max, percent, reps, sets, setId, len) {
+    var setsDoneJson = localStorage.getItem(setId) || '[]';
+    if (setsDoneJson === 'undefined') setsDoneJson = '[]';
+    //setsDone is a json array
+    //convert older format -- number of sets done
+    //to newer one of -- array of reps done in each set
+    var setsDone = JSON.parse(setsDoneJson);
+    if (typeof setsDone === 'string') {
+        setsDone = parseInt(setsDone, 10);
+    }
+    if (typeof setsDone === 'number') {
+        setsDone = (new Array(setsDone)).map(function() { return reps; });
     }
     var workDone = getWork(setsDone, max, percent, len);
+    var currentRepSliderId = setId + '__set-' + setsDone.length + '__reps__slider';
+    var currentRepsTextId = setId + '__set-' + setsDone.length + '__reps__text';
 
     return '<div class=\'exercise\'>' + exercise.toUpperCase()  +
-      ' (' + formatPlates(perc(max, percent)) + ' )'  + ' Rep:'+ reps +
-      ' <span id=\'' + setId + '\'>Sets:' + setsDone + '</span> ' +
-      '<button class=\'addSetBtn\' onclick=\'addSet("' + setId + '",' + max + ',' + percent + ',' + len + ')\' >+</button>' +
-      ' <button onclick=\'removeSet("' + setId +'",' + max + ',' + percent + ',' + len +  ')\' >-</button>' +
+      ' (' + formatPlates(perc(max, percent)) + ' )'  + ' (' + sets + 'x' + reps + ') ' +
+      ' <span id=\'' + setId + '\'>Sets: ' + setsDone.toString() + '</span> ' + '<br/>' +
+      ' <input type="range" min="0" max="12" step="1" name="' + currentRepSliderId  + '" id="' + currentRepSliderId + '" value="0" ' +
+      'oninput=\'setReps("' + currentRepSliderId + '","' + currentRepsTextId + '")\' />' +
+      ' <input type="number" min="0" max="12" step="1" id="' + currentRepsTextId + '" value="0" ' +
+      'onchange=\'setReps("' + currentRepsTextId + '","' + currentRepSliderId + '")\' />' +
+    '<button class=\'addSetBtn\' onclick=\'addSet("' + setId + '",' + max + ',' + percent + ',' + len + ',' + reps +  ',"' + currentRepsTextId + '")\' >+</button>' +
+      ' <button onclick=\'removeSet("' + setId +'",' + max + ',' + percent + ',' + len + ',' + reps + ')\' >-</button>' +
       '</div>' +
       '<div id="' + setId + '__work" class="work">' + workDone
        + '</div>';
@@ -125,7 +166,8 @@ function formatExercise(exercise, max, percent, reps, setId, len) {
 function deload(overloadWeek) {
     return {
         percent: overloadWeek.percent * 0.85,
-        reps: Math.round(overloadWeek.reps * 0.60)
+        reps: Math.round(overloadWeek.reps * 0.70),
+        sets: Math.round(overloadWeek.sets * 0.60)
     };
 }
 
@@ -134,55 +176,67 @@ var program = {
     hypertrophy: [
         {
             percent: 60,
-            reps: 10
+            reps: 10,
+            sets: 6
         },
         {
             percent: 65,
-            reps: 8
+            reps: 8,
+            sets: 6
         },
         {
             percent: 70,
-            reps: 6
+            reps: 6,
+            sets: 6
         },
         deload({
             percent: 70,
-            reps: 6
+            reps: 6,
+            sets: 6
         }),
     ],
     strength: [
         {
             percent: 75,
-            reps: 6
+            reps: 6,
+            sets: 6
         },
         {
             percent: 80,
-            reps: 5
+            reps: 5,
+            sets: 6
         },
         {
             percent: 85,
-            reps: 4
+            reps: 4,
+            sets: 6
         },
         deload({
             percent: 85,
-            reps: 4
+            reps: 4,
+            sets: 6
         })
     ],
     peaking: [
         {
             percent: 90,
-            reps: 4
+            reps: 4,
+            sets: 6
         },
         {
             percent: 95,
-            reps: 3
+            reps: 3,
+            sets: 6
         },
         {
             percent: 100,
-            reps: 2
+            reps: 2,
+            sets: 6
         },
         deload({
             percent: 100,
-            reps: 2
+            reps: 2,
+            sets: 6
         })
     ]
 
@@ -205,11 +259,8 @@ function formatPhase(phase, max, len, incr) {
             var dayId = phase + '--wk-' + week + '--day-' + day;
             echo('<h4 id="' + dayId + '"><a href="#' + dayId + '"> WORKOUT ' + (day + 1) + '</a></h4>');
             workout.forEach(function (exercise) {
-                console.log(typeof incr[exercise]);
-
                 var targetMax = max[exercise] * (100 + incr[exercise]) / 100;
-                console.log(targetMax);
-                echo(formatExercise(exercise, targetMax , levels.percent, levels.reps,
+                echo(formatExercise(exercise, targetMax , levels.percent, levels.reps, levels.sets,
                                   phase + '--wk-' + week + '--day-' + day + '--' + exercise, len[exercise]));
             });
             echo('');
