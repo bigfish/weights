@@ -460,16 +460,18 @@ function calc() {
 
     };
 
-    var activeWeek = num(localStorage.getItem('activeWeek'));
+    var activeWeek = localStorage.getItem('activeWeek');
 
     if (activeWeek) {
-        formatWeek(activeWeek - 1);
-        document.getElementById('activeWeek').value = activeWeek;
+        activeWeek = num(activeWeek);
     } else {
-        for (var i = 0; i < 12; i++) {
-            formatWeek(i);
-        }
+        activeWeek = 1;
+        localStorage.setItem('activeWeek', activeWeek);
     }
+
+    formatWeek(activeWeek - 1);
+
+    document.getElementById('activeWeek').value = activeWeek;
 
     return false;
 }
