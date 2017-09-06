@@ -9,13 +9,23 @@
   </head>
   <body>
 
-    <h2>Goals</h2>
+    <label>Week:
+      <button onclick="showPrevWeek()" >prev</button>
+      <input type="number" name="activeWeek" id="activeWeek" min="1" max="1000" value="1" />
+      <button onclick="showNextWeek()" >next</button>
+      <button onclick="showWeek()" >show</button>
+    </label>
+    <label>show settings
+      <input type="checkbox" name="showSettings" id="showSettings-checkbox" onchange="toggleSettings(this.checked)"></input>
+    </label>
+    <div id="settings">
+    <h2>Settings</h2>
     <form onsubmit="return calc();">
       <fieldset>
         <legend>Squat</legend>
         <div class="form-field">
           <label>Max:</label>
-          <input type="number" min="0" max="1000" step="5" id="squat" name="squat" value="315"/> lb
+          <input type="number" min="0" max="1000" step="5" id="squat" name="squat" value="355"/> lb
         </div>
         <div class="form-field">
           <label>Len:</label>
@@ -25,13 +35,25 @@
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="squat-incr" name="squat-incr" value="5"/> %
         </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="squat-hyper-len" name="squat-hyper-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="squat-strength-len" name="squat-strength-len" value="5"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="squat-peak-len" name="squat-peak-len" value="4"/> weeks
+        </div>
       </fieldset>
 
       <fieldset>
         <legend>Bench Press</legend>
         <div class="form-field">
           <label>Max:</label>
-          <input type="number" min="0" max="1000" id="benchpress" name="benchpress" value="225"/> lb
+          <input type="number" min="0" max="1000" id="benchpress" name="benchpress" value="265"/> lb
         </div>
         <div class="form-field">
           <label>Len:</label>
@@ -40,6 +62,18 @@
         <div class="form-field">
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="benchpress-incr" name="benchpress-incr" value="5"/> %
+        </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="benchpress-hyper-len" name="benchpress-hyper-len" value="5"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="benchpress-strength-len" name="benchpress-strength-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="benchpress-peak-len" name="benchpress-peak-len" value="4"/> weeks
         </div>
       </fieldset>
 
@@ -57,6 +91,18 @@
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="barbellrow-incr" name="barbellrow-incr" value="5"/> %
         </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="barbellrow-hyper-len" name="barbellrow-hyper-len" value="5"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="barbellrow-strength-len" name="barbellrow-strength-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="barbellrow-peak-len" name="barbellrow-peak-len" value="4"/> weeks
+        </div>
       </fieldset>
 
       <fieldset>
@@ -71,12 +117,24 @@
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="chinup-incr" name="chinup-incr" value="5"/> %
         </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="chinup-hyper-len" name="chinup-hyper-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="chinup-strength-len" name="chinup-strength-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="chinup-peak-len" name="chinup-peak-len" value="4"/> weeks
+        </div>
       </fieldset>
 
       <fieldset>
         <legend>Deadlift</legend>
         <div class="form-field">
-          <label>Max:</label> <input type="number" min="0" max="1000" id="deadlift" name="deadlift" value="315"/> lb
+          <label>Max:</label> <input type="number" min="0" max="1000" id="deadlift" name="deadlift" value="325"/> lb
         </div>
         <div class="form-field">
           <label>Length:</label> <input type="number" min="0" max="1.0" step="0.1" id="deadlift-len" name="deadlift-len" value="0.6"/> m
@@ -84,6 +142,18 @@
         <div class="form-field">
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="deadlift-incr" name="deadlift-incr" value="5"/> %
+        </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="deadlift-hyper-len" name="deadlift-hyper-len" value="4"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="deadlift-strength-len" name="deadlift-strength-len" value="5"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="deadlift-peak-len" name="deadlift-peak-len" value="4"/> weeks
         </div>
       </fieldset>
 
@@ -99,12 +169,25 @@
           <label>Incr:</label>
           <input type="number" min="0" max="100" step="1" id="ohpress-incr" name="ohpress-incr" value="5"/> %
         </div>
+        <div class="form-field">
+          <label>Hypertrophy:</label>
+          <input type="number" min="0" max="10" step="1" id="ohpress-hyper-len" name="ohpress-hyper-len" value="6"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Strength:</label>
+          <input type="number" min="0" max="10" step="1" id="ohpress-strength-len" name="ohpress-strength-len" value="5"/> weeks
+        </div>
+        <div class="form-field">
+          <label>Peaking:</label>
+          <input type="number" min="0" max="10" step="1" id="ohpress-peak-len" name="ohpress-peak-len" value="4"/> weeks
+        </div>
       </fieldset>
 
 
       <button type="submit">calculate</button>
 
     </form>
+    </div>
     <div id="output">
 
     </div>

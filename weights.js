@@ -71,6 +71,10 @@ function formatPlates(plates) {
     return output;
 }
 
+function clearOutput() {
+    el('output').innerHTML = '';
+}
+
 function echo(html) {
     el('output').innerHTML += html + '<br>';
 }
@@ -131,8 +135,20 @@ function removeSet(id, max, perc, len, targetReps) {
 function setReps(srcId, targetId) {
     el(targetId).value = el(srcId).value;
 }
+function formatExercise(exercise, week) {
+  //get max,percent, reps, sets, setId, len
 
-function formatExercise(exercise, max, percent, reps, sets, setId, len) {
+    //adjust max by desired increase
+    var max = settings.max[exercise] * (100 + settings.incr[exercise]) / 100;
+
+    var levels = getLevels(exercise, week);
+    var len = settings.len[exercise];
+    var percent = levels.percent;
+    var sets = levels.sets;
+    var reps = levels.reps;
+    var setId = 'week--' + week + '--' + exercise;
+
+  //percent, reps, sets, setId, len
     var setsDoneJson = localStorage.getItem(setId) || '[]';
     if (setsDoneJson === 'undefined') setsDoneJson = '[]';
     //setsDone is a json array
@@ -149,7 +165,7 @@ function formatExercise(exercise, max, percent, reps, sets, setId, len) {
     var currentRepSliderId = setId + '__set-' + setsDone.length + '__reps__slider';
     var currentRepsTextId = setId + '__set-' + setsDone.length + '__reps__text';
 
-    return '<div class=\'exercise\'>' + exercise.toUpperCase()  +
+    return '<div class=\'exercise\'>' + exercise.toUpperCase()  + ' ' + percent + '%' + (levels.deload ? ':deload': '') +
       ' (' + formatPlates(perc(max, percent)) + ' )'  + ' (' + sets + 'x' + reps + ') ' +
       ' <span id=\'' + setId + '\'>Sets: ' + setsDone.toString() + '</span> ' + '<br/>' +
       ' <input type="range" min="0" max="12" step="1" name="' + currentRepSliderId  + '" id="' + currentRepSliderId + '" value="0" ' +
@@ -171,81 +187,151 @@ function deload(overloadWeek) {
     };
 }
 
-var program = {
-
-    hypertrophy: [
-        {
+var phases = {
+    hyper: {
+        start: {
             percent: 60,
             reps: 10,
             sets: 6
         },
-        {
-            percent: 65,
-            reps: 8,
-            sets: 6
-        },
-        {
+        end: {
             percent: 70,
             reps: 6,
             sets: 6
-        },
-        deload({
-            percent: 70,
-            reps: 6,
-            sets: 6
-        }),
-    ],
-    strength: [
-        {
+        }
+    },
+    strength: {
+        start: {
             percent: 75,
             reps: 6,
-            sets: 6
+            sets: 5
         },
-        {
-            percent: 80,
-            reps: 5,
-            sets: 6
-        },
-        {
+        end: {
             percent: 85,
             reps: 4,
-            sets: 6
-        },
-        deload({
-            percent: 85,
-            reps: 4,
-            sets: 6
-        })
-    ],
-    peaking: [
-        {
+            sets: 5
+        }
+    },
+    peak: {
+        start: {
             percent: 90,
             reps: 4,
-            sets: 6
+            sets: 4
         },
-        {
-            percent: 95,
-            reps: 3,
-            sets: 6
-        },
-        {
+        end: {
             percent: 100,
             reps: 2,
-            sets: 6
-        },
-        deload({
-            percent: 100,
-            reps: 2,
-            sets: 6
-        })
-    ]
-
+            sets: 4
+        }
+    }
 };
 
-var workouts = [
+function getPhaseAndWeek(exercise, week) {
+
+    var hyperWeeks = settings.hyper[exercise];
+    var strengthWeeks = settings.strength[exercise];
+    var peakWeeks = settings.peak[exercise];
+
+    var totalWeeks = hyperWeeks + strengthWeeks + peakWeeks;
+
+  //determine which phase we are in
+    if (week < hyperWeeks ) {
+        return {
+            phase:'hyper',
+            week: week
+        };
+    } else if (week < hyperWeeks + strengthWeeks) {
+        return {
+            phase: 'strength',
+            week: week - hyperWeeks
+        };
+    } else if (week < hyperWeeks + strengthWeeks + peakWeeks) {
+        return {
+            phase: 'peak',
+            week: week - (hyperWeeks + strengthWeeks)
+        };
+    } else {
+    //if weeks > total of phases, recurse
+        return getLevels(exercise, week - totalWeeks);
+    }
+}
+
+function getNumWeeksInPhase(exercise, phase) {
+    if (phase === 'hyper') {
+        return settings.hyper[exercise];
+    } else if (phase === 'strength') {
+        return settings.strength[exercise];
+    } else if (phase === 'peak') {
+        return settings.peak[exercise];
+    }
+    throw new Error('unknown phase:', phase);
+}
+
+function interpolate(start, end, setting, completion) {
+    var result = start[setting] + (end[setting] - start[setting]) * completion;
+
+    return Math.round(result);
+}
+
+function getLevels(exercise, week) {
+    //console.log('getLevels', exercise, week);
+
+    var hyperWeeks = settings.hyper[exercise];
+    var strengthWeeks = settings.strength[exercise];
+    var peakWeeks = settings.peak[exercise];
+
+    var p = getPhaseAndWeek(exercise, week);
+    var phase = p.phase;
+    var start = phases[phase].start;
+    var end = phases[phase].end;
+    var weeksInPhase = getNumWeeksInPhase(exercise, phase);
+
+    var completion = (p.week) / (weeksInPhase - 2); // exclude deload week
+
+    //calculate levels..
+    var percent = interpolate(start, end, 'percent', completion);
+    var sets = interpolate(start, end, 'sets', completion);
+    var reps = interpolate(start, end, 'reps', completion);
+
+    var levels = {
+        percent: percent,
+        sets: sets,
+        reps: reps
+    };
+
+    //if last week, deload levels
+    if (p.week + 1 === weeksInPhase) {
+        levels = deload(levels);
+        levels.deload = true;
+    }
+    return levels;
+}
+
+/*var workouts = [
    ['squat', 'benchpress', 'chinup'],
    ['barbellrow', 'ohpress', 'deadlift']
 ];
+*/
+var days = [
+   ['squat', 'benchpress', 'chinup'],
+   ['barbellrow', 'ohpress', 'deadlift']
+];
+
+function formatWeek(week) {
+
+    var id = 'week-' + week;
+
+    echo('<h3 id="' + id + '"><a href="#' + id +'"> WEEK ' + (week + 1) + '</a></h3>');
+
+    days.forEach(function (workout, day) {
+        var dayId = 'week-' + week + '--day-' + day;
+        echo('<h4 id="' + dayId + '"><a href="#' + dayId + '"> DAY ' + (day + 1) + '</a></h4>');
+        workout.forEach(function (exercise) {
+            echo(formatExercise(exercise, week));
+        });
+        echo('');
+    });
+}
 
 function formatPhase(phase, max, len, incr) {
 
@@ -274,7 +360,10 @@ function num(n) {
     return parseInt(n, 10);
 }
 
+var settings = {};
+
 function calc() {
+    clearOutput();
     var output = el('output');
     var chinup = el('chinup');
     var squat = el('squat');
@@ -296,36 +385,126 @@ function calc() {
     var barbellrow_incr = el('barbellrow-incr');
     var deadlift_incr = el('deadlift-incr');
     var ohpress_incr = el('ohpress-incr');
-    var max = {
-        squat: squat.value,
-        chinup: chinup.value,
-        benchpress: benchpress.value,
-        barbellrow: barbellrow.value,
-        ohpress: ohpress.value,
-        deadlift: deadlift.value,
-    };
-    var incr = {
-        squat: num(squat_incr.value),
-        chinup: num(chinup_incr.value),
-        benchpress: num(benchpress_incr.value),
-        barbellrow: num(barbellrow_incr.value),
-        ohpress: num(ohpress_incr.value),
-        deadlift: num(deadlift_incr.value),
-    };
-    var len = {
-        squat: squat_len.value,
-        chinup: chinup_len.value,
-        benchpress: benchpress_len.value,
-        barbellrow: barbellrow_len.value,
-        ohpress: ohpress_len.value,
-        deadlift: deadlift_len.value,
+    //hypertrophy phase
+    var chinup_hyper = el('chinup-hyper-len');
+    var squat_hyper = el('squat-hyper-len');
+    var benchpress_hyper = el('benchpress-hyper-len');
+    var barbellrow_hyper = el('barbellrow-hyper-len');
+    var deadlift_hyper = el('deadlift-hyper-len');
+    var ohpress_hyper = el('ohpress-hyper-len');
+    //strength phase
+    var chinup_strength = el('chinup-strength-len');
+    var squat_strength = el('squat-strength-len');
+    var benchpress_strength = el('benchpress-strength-len');
+    var barbellrow_strength = el('barbellrow-strength-len');
+    var deadlift_strength = el('deadlift-strength-len');
+    var ohpress_strength = el('ohpress-strength-len');
+    //peaking phase
+    var chinup_peak = el('chinup-peak-len');
+    var squat_peak = el('squat-peak-len');
+    var benchpress_peak = el('benchpress-peak-len');
+    var barbellrow_peak = el('barbellrow-peak-len');
+    var deadlift_peak = el('deadlift-peak-len');
+    var ohpress_peak = el('ohpress-peak-len');
+
+    settings = {
+        max:  {
+            squat: squat.value,
+            chinup: chinup.value,
+            benchpress: benchpress.value,
+            barbellrow: barbellrow.value,
+            ohpress: ohpress.value,
+            deadlift: deadlift.value,
+        },
+        incr:  {
+            squat: num(squat_incr.value),
+            chinup: num(chinup_incr.value),
+            benchpress: num(benchpress_incr.value),
+            barbellrow: num(barbellrow_incr.value),
+            ohpress: num(ohpress_incr.value),
+            deadlift: num(deadlift_incr.value),
+        },
+        hyper:  {
+            squat: num(squat_hyper.value),
+            chinup: num(chinup_hyper.value),
+            benchpress: num(benchpress_hyper.value),
+            barbellrow: num(barbellrow_hyper.value),
+            ohpress: num(ohpress_hyper.value),
+            deadlift: num(deadlift_hyper.value),
+        },
+        strength:  {
+            squat: num(squat_strength.value),
+            chinup: num(chinup_strength.value),
+            benchpress: num(benchpress_strength.value),
+            barbellrow: num(barbellrow_strength.value),
+            ohpress: num(ohpress_strength.value),
+            deadlift: num(deadlift_strength.value),
+        },
+        peak:  {
+            squat: num(squat_peak.value),
+            chinup: num(chinup_peak.value),
+            benchpress: num(benchpress_peak.value),
+            barbellrow: num(barbellrow_peak.value),
+            ohpress: num(ohpress_peak.value),
+            deadlift: num(deadlift_peak.value),
+        },
+
+        len:  {
+            squat: squat_len.value,
+            chinup: chinup_len.value,
+            benchpress: benchpress_len.value,
+            barbellrow: barbellrow_len.value,
+            ohpress: ohpress_len.value,
+            deadlift: deadlift_len.value,
+        }
+
     };
 
-    formatPhase('hypertrophy', max, len, incr);
-    formatPhase('strength', max, len, incr);
-    formatPhase('peaking', max, len, incr);
+    var activeWeek = num(localStorage.getItem('activeWeek'));
+
+    if (activeWeek) {
+        formatWeek(activeWeek - 1);
+        document.getElementById('activeWeek').value = activeWeek;
+    } else {
+        for (var i = 0; i < 12; i++) {
+            formatWeek(i);
+        }
+    }
 
     return false;
+}
+
+function toggleSettings(show) {
+
+    if (show) {
+        document.getElementById('settings').className = 'visible';
+    } else {
+        document.getElementById('settings').className = '';
+    }
+
+}
+
+function showWeek() {
+    var week = document.getElementById('activeWeek').value;
+    localStorage.setItem('activeWeek', week);
+    calc();
+}
+function showPrevWeek() {
+    var activeWeek = num(localStorage.getItem('activeWeek')) - 1;
+    if (activeWeek) {
+        document.getElementById('activeWeek').value = activeWeek;
+        localStorage.setItem('activeWeek', activeWeek);
+        calc();
+    }
+}
+
+function showNextWeek() {
+    var activeWeek = num(localStorage.getItem('activeWeek')) + 1;
+    document.getElementById('activeWeek').value = activeWeek;
+    if (activeWeek) {
+        localStorage.setItem('activeWeek', activeWeek);
+        calc();
+    }
 }
 
 //FORCE / WORK

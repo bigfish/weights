@@ -31,3 +31,9 @@ fieldset {
 .form-field {
   margin: 0.5em;
 }
+#settings {
+  display: none;
+}
+#settings.visible {
+  display: block;
+}
