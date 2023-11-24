@@ -1,7 +1,6 @@
 {
   "name": "weights",
   "version": "1.0.0",
-  "description": "",
   "main": "weights.js",
   "dependencies": {
     "serve": "^5.2.1"
@@ -11,5 +10,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bigfish/weights.git"
+  },
+  "keywords": [],
+  "bugs": {
+    "url": "https://github.com/bigfish/weights/issues"
+  },
+  "homepage": "https://github.com/bigfish/weights#readme",
+  "description": ""
 }

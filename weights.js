@@ -79,15 +79,6 @@ function echo(html) {
     el('output').innerHTML += html + '<br>';
 }
 
-function getWork(setsDone, max, percent, len) {
-    var repsDone = setsDone.reduce(function (prev, set) {
-        return prev + set;
-    }, 0);
-    var workPerRep = work(kg(getPlateWeight(perc(max, percent))), len);
-    var workJ = Math.floor(repsDone * workPerRep);
-    return workJ + 'kJ ' + Math.floor(workJ / 4.186)  + 'C';
-}
-
 function addSet(id, max, perc, len, targetReps, repsId) {
     var setsDoneJson = localStorage.getItem(id);
     if (!setsDoneJson || setsDoneJson === 'undefined') {
@@ -106,7 +97,6 @@ function addSet(id, max, perc, len, targetReps, repsId) {
     var setsDoneStr = JSON.stringify(setsDone);
     localStorage.setItem(id, setsDoneStr);
     el(id).innerText = 'Sets: ' + setsDone.toString();
-    el(id + '__work').innerText = getWork(setsDone, max, perc, len);
 }
 
 function removeSet(id, max, perc, len, targetReps) {
@@ -129,7 +119,6 @@ function removeSet(id, max, perc, len, targetReps) {
     var setsDoneStr = JSON.stringify(setsDone);
     localStorage.setItem(id, setsDoneStr);
     el(id).innerText = 'Sets: ' + setsDone.toString();
-    el(id + '__work').innerText = getWork(setsDone, max, perc, len);
 }
 
 function setReps(srcId, targetId) {
@@ -161,7 +150,6 @@ function formatExercise(exercise, week) {
     if (typeof setsDone === 'number') {
         setsDone = (new Array(setsDone)).map(function() { return reps; });
     }
-    var workDone = getWork(setsDone, max, percent, len);
     var currentRepSliderId = setId + '__set-' + setsDone.length + '__reps__slider';
     var currentRepsTextId = setId + '__set-' + setsDone.length + '__reps__text';
 
@@ -174,9 +162,7 @@ function formatExercise(exercise, week) {
       'onchange=\'setReps("' + currentRepsTextId + '","' + currentRepSliderId + '")\' />' +
     '<button class=\'addSetBtn\' onclick=\'addSet("' + setId + '",' + max + ',' + percent + ',' + len + ',' + reps +  ',"' + currentRepsTextId + '")\' >+</button>' +
       ' <button onclick=\'removeSet("' + setId +'",' + max + ',' + percent + ',' + len + ',' + reps + ')\' >-</button>' +
-      '</div>' +
-      '<div id="' + setId + '__work" class="work">' + workDone
-       + '</div>';
+    '</div>';
 }
 
 function deload(overloadWeek) {
