@@ -13,6 +13,15 @@ function el(id) {
  *  ie. reduce #reps more than weight
  */
 
+const exercise_name = {
+  squat: "squat",
+  benchpress: "bench_press",
+  barbellrow: "row",
+  deadlift: "deadlift",
+  ohpress: "oh_press",
+  chinup: "pullup",
+};
+
 function perc(max, p) {
   var weight = (max * p) / 100;
   var weightWithoutBar = weight - 45;
@@ -159,73 +168,79 @@ function formatExercise(exercise, week) {
     setId + "__set-" + setsDone.length + "__reps__slider";
   var currentRepsTextId = setId + "__set-" + setsDone.length + "__reps__text";
 
-  return (
-    "<div class='exercise'>" +
-    exercise.toUpperCase() +
-    " " +
-    percent +
-    "%" +
-    (levels.deload ? ":deload" : "") +
-    " (" +
-    formatPlates(perc(max, percent)) +
-    " )" +
-    " (" +
-    sets +
-    "x" +
-    reps +
-    ") " +
-    " <span id='" +
-    setId +
-    "'>Sets: " +
-    setsDone.toString() +
-    "</span> " +
-    "<br/>" +
-    ' <input type="range" min="0" max="12" step="1" name="' +
-    currentRepSliderId +
-    '" id="' +
-    currentRepSliderId +
-    '" value="' +
-    reps +
-    '" ' +
-    "oninput='setReps(\"" +
-    currentRepSliderId +
-    '","' +
-    currentRepsTextId +
-    "\")' />" +
-    ' <input type="number" min="0" max="12" step="1" id="' +
-    currentRepsTextId +
-    '" value="0" ' +
-    "onchange='setReps(\"" +
-    currentRepsTextId +
-    '","' +
-    currentRepSliderId +
-    "\")' />" +
-    "<button class='addSetBtn' onclick='addSet(\"" +
-    setId +
-    '",' +
-    max +
-    "," +
-    percent +
-    "," +
-    len +
-    "," +
-    reps +
-    ',"' +
-    currentRepsTextId +
-    "\")' >+</button>" +
-    " <button onclick='removeSet(\"" +
-    setId +
-    '",' +
-    max +
-    "," +
-    percent +
-    "," +
-    len +
-    "," +
-    reps +
-    ")' >-</button>" +
-    "</div>"
-  );
+  return {
+    html:
+      "<div class='exercise'>" +
+      exercise.toUpperCase() +
+      " " +
+      percent +
+      "%" +
+      (levels.deload ? ":deload" : "") +
+      " (" +
+      formatPlates(perc(max, percent)) +
+      " )" +
+      " (" +
+      sets +
+      "x" +
+      reps +
+      ") " +
+      " <span id='" +
+      setId +
+      "'>Sets: " +
+      setsDone.toString() +
+      "</span> " +
+      "<br/>" +
+      ' <input type="range" min="0" max="12" step="1" name="' +
+      currentRepSliderId +
+      '" id="' +
+      currentRepSliderId +
+      '" value="' +
+      reps +
+      '" ' +
+      "oninput='setReps(\"" +
+      currentRepSliderId +
+      '","' +
+      currentRepsTextId +
+      "\")' />" +
+      ' <input type="number" min="0" max="12" step="1" id="' +
+      currentRepsTextId +
+      '" value="0" ' +
+      "onchange='setReps(\"" +
+      currentRepsTextId +
+      '","' +
+      currentRepSliderId +
+      "\")' />" +
+      "<button class='addSetBtn' onclick='addSet(\"" +
+      setId +
+      '",' +
+      max +
+      "," +
+      percent +
+      "," +
+      len +
+      "," +
+      reps +
+      ',"' +
+      currentRepsTextId +
+      "\")' >+</button>" +
+      " <button onclick='removeSet(\"" +
+      setId +
+      '",' +
+      max +
+      "," +
+      percent +
+      "," +
+      len +
+      "," +
+      reps +
+      ")' >-</button>" +
+      "</div>",
+    json: {
+      sets,
+      reps,
+      percent,
+    },
+  };
 }
 
 function deload(overloadWeek) {
@@ -368,7 +383,7 @@ var days = [
 
 function formatWeek(week) {
   var id = "week-" + week;
-
+  var week_json = [];
   echo(
     '<h3 id="' +
       id +
@@ -390,11 +405,23 @@ function formatWeek(week) {
         (day + 1) +
         "</a></h4>"
     );
+    const workout_json = {};
     workout.forEach(function (exercise) {
-      echo(formatExercise(exercise, week));
+      const exercise_result = formatExercise(exercise, week);
+      const sets = [];
+      for (var i = 0; i < exercise_result.json.sets; i++) {
+        sets.push({
+          reps: exercise_result.json.reps,
+          percent: exercise_result.json.percent,
+        });
+      }
+      workout_json[exercise_name[exercise]] = sets;
+      echo(exercise_result.html);
     });
+    week_json.push(workout_json);
     echo("");
   });
+  return week_json;
 }
 
 function formatPhase(phase, max, len, incr) {
@@ -547,15 +574,19 @@ function calc() {
 
   var activeWeek = num(localStorage.getItem("activeWeek"));
 
+  var weeks_json = [];
   if (activeWeek) {
     formatWeek(activeWeek - 1);
     document.getElementById("activeWeek").value = activeWeek;
   } else {
     for (var i = 0; i < 12; i++) {
-      formatWeek(i);
+      const week_json = formatWeek(i);
+      weeks_json.push(week_json);
     }
   }
-
+  //flatten weeks array
+  const flat_weeks = weeks_json.reduce((acc, cur) => acc.concat(cur), []);
+  console.log(JSON.stringify(flat_weeks, null, "  "));
   return false;
 }
 
